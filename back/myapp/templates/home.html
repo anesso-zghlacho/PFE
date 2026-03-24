@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Accueil</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+    <main class="container">
+        <article>
+            <header>
+                <h2>Bienvenue, {{ user.username }} ! 👋</h2>
+            </header>
+            <p>Voici la page simple qui affiche n'importe quoi. Mission accomplie.</p>
+            <footer>
+                <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="secondary">Se déconnecter</button>
+                </form>
+            </footer>
+        </article>
+    </main>
+</body>
+</html>
