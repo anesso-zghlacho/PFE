@@ -8,6 +8,10 @@ router.register(r'alerts', views.AlertViewSet, basename='alert')
 router.register(r'simulations', views.SimulationResultViewSet, basename='simulation')
 
 urlpatterns = [
-    path('', views.home, name='home'),
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
+    path('auth/csrf/', views.get_csrf_token, name='csrf_token'),
+    path('auth/register/', views.api_register, name='api_register'),
+    path('auth/login/', views.api_login, name='api_login'),
+    path('auth/logout/', views.api_logout, name='api_logout'),
+    path('auth/user/', views.api_user, name='api_user'),
 ]

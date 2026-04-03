@@ -1,12 +1,16 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-from rest_framework import viewsets, filters
-from rest_framework.decorators import action
+from django.contrib.auth import authenticate, login, logout
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.authtoken.models import Token
 from .models import TrafficLog, Alert, SimulationResult
-from .serializers import TrafficLogSerializer, AlertSerializer, SimulationResultSerializer
+from .serializers import TrafficLogSerializer, AlertSerializer, SimulationResultSerializer, RegisterSerializer, LoginSerializer, UserSerializer
 
 # Original Views for Authentication
 def register(request):
@@ -22,6 +26,58 @@ def register(request):
 @login_required
 def home(request):
     return render(request, 'home.html')
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_register(request):
+    serializer = RegisterSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_login(request):
+    serializer = LoginSerializer(data=request.data)
+    if serializer.is_valid():
+        user = authenticate(
+            username=serializer.validated_data['username'],
+            password=serializer.validated_data['password']
+        )
+        if user:
+            login(request, user)
+            return Response({'message': 'Login successful'})
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_logout(request):
+    logout(request)
+    return Response({'message': 'Logout successful'})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_user(request):
+    if not request.user.is_authenticated:
+        return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@permission_classes([AllowAny])
+def get_csrf_token(request):
+    return Response({'csrfToken': get_token(request)})
 
 
 # API ViewSets

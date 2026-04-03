@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'myapp.middleware.DisableCsrfForAuthMiddleware',
 ]
 
 ROOT_URLCONF = 'demo.urls'
@@ -128,9 +129,14 @@ LOGIN_URL = 'login' # <-- La nouvelle ligne qui règle le problème !
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:5173',
+    'http://localhost:8080',
+    'http://localhost:8081',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5173',
+    'http://127.0.0.1:8080',
+    'http://127.0.0.1:8081',
 ]
+CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
@@ -141,3 +147,6 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
 }
+
+# Session settings
+SESSION_COOKIE_SAMESITE = 'Lax'
