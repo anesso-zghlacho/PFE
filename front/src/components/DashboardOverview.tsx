@@ -49,7 +49,7 @@ export function DashboardOverview({ trafficLogs, alerts }: Props) {
       .slice(-20);
   }, [trafficLogs]);
 
-  const highAlerts = alerts.filter(a => a.severity === 'high').length;
+  const highAlerts = alerts.filter(a => a.severity === 'HIGH').length;
 
   return (
     <div className="space-y-6">

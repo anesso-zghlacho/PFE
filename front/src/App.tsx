@@ -25,7 +25,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function IDSApp() {
-  const { trafficLogs, alerts, launchAttack, clearAlerts, clearLogs } = useIDSStore();
+  const { trafficLogs, alerts, clearAlerts, clearLogs } = useIDSStore();
 
   return (
     <ProtectedRoute>
