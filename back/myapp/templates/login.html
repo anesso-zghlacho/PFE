@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+    <main class="container">
+        <article>
+            <h2>Connexion au projet</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Se connecter</button>
+            </form>
+            <p>Pas encore de compte ? <a href="{% url 'register' %}">Créer un compte</a></p>
+        </article>
+    </main>
+</body>
+</html>
