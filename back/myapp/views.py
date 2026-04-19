@@ -10,8 +10,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
-from .models import TrafficLog, Alert, SimulationResult
-from .serializers import TrafficLogSerializer, AlertSerializer, SimulationResultSerializer, RegisterSerializer, LoginSerializer, UserSerializer
+from .models import TrafficLog, Alert
+from .serializers import TrafficLogSerializer, AlertSerializer, RegisterSerializer, LoginSerializer, UserSerializer
 
 # Original Views for Authentication
 def register(request):
@@ -143,38 +143,3 @@ class AlertViewSet(viewsets.ModelViewSet):
         alert.is_resolved = True
         alert.save()
         return Response({'status': 'Alert resolved'})
-
-
-class SimulationResultViewSet(viewsets.ModelViewSet):
-    queryset = SimulationResult.objects.all()
-    serializer_class = SimulationResultSerializer
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['attack_type', 'target_ip']
-    ordering_fields = ['timestamp', 'success']
-    ordering = ['-timestamp']
-    permission_classes = [AllowAny]
-
-    @action(detail=False, methods=['post'])
-    def launch_attack(self, request):
-        """Launch a simulated attack"""
-        attack_type = request.data.get('attack_type')
-        target_ip = request.data.get('target_ip')
-        
-        # Create simulation result
-        result = SimulationResult.objects.create(
-            attack_type=attack_type,
-            target_ip=target_ip,
-            success=True,  # In real scenario, this would be based on actual attack simulation
-            details='Simulated attack executed successfully'
-        )
-        
-        # Create corresponding alert
-        Alert.objects.create(
-            title=f"Simulated {attack_type} Attack",
-            description=f"Simulated {attack_type} attack on {target_ip}",
-            severity='HIGH',
-            source_ip='127.0.0.1'
-        )
-        
-        serializer = self.get_serializer(result)
-        return Response(serializer.data)

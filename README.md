@@ -22,7 +22,7 @@ ids-dashboard/
 │   │   ├── urls.py
 │   │   └── wsgi.py
 │   └── myapp/               # Main application
-│       ├── models.py        # TrafficLog, Alert, SimulationResult
+│       ├── models.py        # TrafficLog, Alert
 │       ├── views.py         # API ViewSets
 │       ├── serializers.py   # DRF Serializers
 │       ├── urls.py          # API routes
@@ -34,7 +34,6 @@ ids-dashboard/
     │   ├── components/      # React components
     │   ├── lib/
     │   │   ├── api-client.ts    # API integration
-    │   │   ├── ids-engine.ts    # IDS simulation
     │   │   └── ids-types.ts     # TypeScript types
     │   ├── hooks/
     │   │   └── use-ids-store.ts # State management
@@ -71,13 +70,11 @@ Frontend: `http://localhost:5173`
 ### Dashboard
 - Real-time traffic monitoring
 - Alert detection and management
-- Attack simulation
 - Traffic statistics and visualization
 
 ### API Endpoints
 - **Traffic Logs**: CRUD operations, suspicious traffic filtering
 - **Alerts**: Create, retrieve, resolve alerts, severity filtering
-- **Simulations**: Launch attacks, track results
 
 ## 🔧 Configuration
 

@@ -95,11 +95,6 @@ The frontend will be available at `http://localhost:5173`
 - `GET /api/alerts/by_severity/` - Get alerts grouped by severity
 - `POST /api/alerts/{id}/resolve/` - Mark alert as resolved
 
-### Simulations
-- `GET /api/simulations/` - Get all simulation results
-- `POST /api/simulations/` - Create a simulation result
-- `POST /api/simulations/launch_attack/` - Launch a simulated attack
-
 ---
 
 ## Running Both Together
@@ -152,7 +147,7 @@ project-root/
 │   │   ├── urls.py
 │   │   └── wsgi.py
 │   └── myapp/           # Application
-│       ├── models.py    # Traffic, Alert, SimulationResult
+        ├── models.py    # Traffic, Alert
 │       ├── views.py     # API ViewSets
 │       ├── serializers.py
 │       ├── urls.py
@@ -163,7 +158,7 @@ project-root/
     │   ├── components/
     │   ├── lib/
     │   │   ├── api-client.ts  # API client
-    │   │   └── ids-engine.ts  # IDS simulation engine
+    │   │   └── ids-types.ts   # TypeScript types
     │   ├── hooks/
     │   │   └── use-ids-store.ts  # State management (synced with backend)
     │   └── main.tsx

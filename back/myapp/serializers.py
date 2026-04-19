@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import TrafficLog, Alert, SimulationResult
+from .models import TrafficLog, Alert
 from django.contrib.auth.models import User
 
 
@@ -88,19 +88,5 @@ class AlertSerializer(serializers.ModelSerializer):
             'timestamp',
             'traffic_log',
             'is_resolved',
-        ]
-        read_only_fields = ['id', 'timestamp']
-
-
-class SimulationResultSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SimulationResult
-        fields = [
-            'id',
-            'attack_type',
-            'target_ip',
-            'timestamp',
-            'success',
-            'details',
         ]
         read_only_fields = ['id', 'timestamp']

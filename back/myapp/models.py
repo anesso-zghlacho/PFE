@@ -45,17 +45,3 @@ class Alert(models.Model):
     
     def __str__(self):
         return f"[{self.severity}] {self.title}"
-
-
-class SimulationResult(models.Model):
-    attack_type = models.CharField(max_length=255)
-    target_ip = models.CharField(max_length=15)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    success = models.BooleanField(default=False)
-    details = models.TextField(blank=True)
-    
-    class Meta:
-        ordering = ['-timestamp']
-    
-    def __str__(self):
-        return f"{self.attack_type} on {self.target_ip}"

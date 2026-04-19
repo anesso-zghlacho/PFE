@@ -5,7 +5,6 @@ from . import views
 router = DefaultRouter()
 router.register(r'traffic', views.TrafficLogViewSet, basename='traffic')
 router.register(r'alerts', views.AlertViewSet, basename='alert')
-router.register(r'simulations', views.SimulationResultViewSet, basename='simulation')
 
 urlpatterns = [
     path('', include(router.urls)),
