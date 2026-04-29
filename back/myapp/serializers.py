@@ -53,29 +53,6 @@ class TrafficLogSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'timestamp']
 
 
-class TrafficLogSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TrafficLog
-        fields = [
-            'id',
-            'src_ip',
-            'dst_ip',
-            'src_port',
-            'dst_port',
-            'protocol',
-            'duration',
-            'packet_count',
-            'byte_count',
-            'bytes_per_packet',
-            'packets_per_sec',
-            'syn_count',
-            'ack_count',
-            'fin_count',
-            'timestamp',
-        ]
-        read_only_fields = ['id', 'timestamp']
-
-
 class AlertSerializer(serializers.ModelSerializer):
     class Meta:
         model = Alert
