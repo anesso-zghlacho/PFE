@@ -9,9 +9,17 @@ from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.authtoken.models import Token
 from .models import TrafficLog, Alert
-from .serializers import TrafficLogSerializer, AlertSerializer, RegisterSerializer, LoginSerializer, UserSerializer
+from .serializers import (
+    TrafficLogSerializer,
+    AlertSerializer,
+    PacketInferenceSerializer,
+    RegisterSerializer,
+    LoginSerializer,
+    UserSerializer,
+)
+from .processing.model_factory import create_model
+from .processing.service import PacketAnalysisService
 
 # Original Views for Authentication
 def register(request):
@@ -103,6 +111,37 @@ class TrafficLogViewSet(viewsets.ModelViewSet):
             'unique_protocols': protocols,
             'total_bytes': total_bytes,
         })
+
+
+# Initialize a lightweight development-only pipeline.
+ml_model = create_model('mock')
+ml_model.load('development')
+packet_analysis_service = PacketAnalysisService(ml_model)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_packet_ingest(request):
+    serializer = PacketInferenceSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    packet_payload = serializer.validated_data
+    if packet_payload.get('packet_size', 0) == 0 and packet_payload.get('length'):
+        packet_payload['packet_size'] = packet_payload['length']
+
+    result, traffic_log, alert = packet_analysis_service.analyze_and_store(packet_payload)
+
+    response_data = {
+        'prediction': {
+            'label': result.label,
+            'score': result.score,
+            'features': result.features,
+        },
+        'traffic_log_id': traffic_log.id,
+        'alert_id': alert.id if alert else None,
+    }
+    return Response(response_data, status=status.HTTP_201_CREATED)
 
 
 class AlertViewSet(viewsets.ModelViewSet):
