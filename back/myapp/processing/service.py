@@ -5,6 +5,7 @@ from typing import Optional
 from .engine import InferenceEngine
 from .model_base import BaseModel, InferenceResult
 from ..models import Alert, TrafficLog
+from ..notifications import get_notification_service
 
 
 class PacketAnalysisService:
@@ -12,6 +13,7 @@ class PacketAnalysisService:
 
     def __init__(self, model: BaseModel) -> None:
         self.engine = InferenceEngine(model)
+        self.notification_service = get_notification_service()
 
     def analyze_and_store(self, packet: dict) -> tuple[InferenceResult, TrafficLog, Optional[Alert]]:
         result = self.engine.analyze_packet(packet)
@@ -45,6 +47,12 @@ class PacketAnalysisService:
                 source_ip=result.features.get('src_ip', '0.0.0.0'),
                 traffic_log=traffic_log,
                 prediction_score=result.score,
+            )
+            # Trigger notification
+            self.notification_service.notify(
+                title=alert.title,
+                description=f"Confidence: {alert.prediction_score:.2f} | Source: {alert.source_ip}",
+                severity=alert.severity
             )
 
         return result, traffic_log, alert

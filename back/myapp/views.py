@@ -20,6 +20,9 @@ from .serializers import (
 )
 from .processing.model_factory import create_model
 from .processing.service import PacketAnalysisService
+from .sniffer_manager import SnifferManager
+
+sniffer_manager = SnifferManager()
 
 # Original Views for Authentication
 def register(request):
@@ -182,3 +185,28 @@ class AlertViewSet(viewsets.ModelViewSet):
         alert.is_resolved = True
         alert.save()
         return Response({'status': 'Alert resolved'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny]) # Change to IsAuthenticated if needed
+def api_sniffer_start(request):
+    interface = request.data.get('interface')
+    success, message = sniffer_manager.start(interface=interface)
+    if success:
+        return Response({'message': message})
+    return Response({'error': message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_sniffer_stop(request):
+    success, message = sniffer_manager.stop()
+    if success:
+        return Response({'message': message})
+    return Response({'error': message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_sniffer_status(request):
+    return Response(sniffer_manager.status())

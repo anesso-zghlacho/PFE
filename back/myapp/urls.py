@@ -14,4 +14,7 @@ urlpatterns = [
     path('auth/login/', views.api_login, name='api_login'),
     path('auth/logout/', views.api_logout, name='api_logout'),
     path('auth/user/', views.api_user, name='api_user'),
+    path('sniffer/start/', views.api_sniffer_start, name='sniffer_start'),
+    path('sniffer/stop/', views.api_sniffer_stop, name='sniffer_stop'),
+    path('sniffer/status/', views.api_sniffer_status, name='sniffer_status'),
 ]

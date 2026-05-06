@@ -32,7 +32,7 @@ function IDSApp() {
       <DashboardLayout>
         <Routes>
           <Route path="/" element={<DashboardOverview trafficLogs={trafficLogs} alerts={alerts} />} />
-          <Route path="/alerts" element={<AlertsPage alerts={alerts} onClear={clearAlerts} />} />
+          <Route path="/alerts" element={<AlertsPage alerts={alerts} onClear={clearAlerts} onResolve={resolveAlert} />} />
           <Route path="/traffic" element={<TrafficPage trafficLogs={trafficLogs} onClear={clearLogs} />} />
         </Routes>
       </DashboardLayout>

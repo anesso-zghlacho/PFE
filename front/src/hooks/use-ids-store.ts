@@ -44,10 +44,20 @@ export function useIDSStore() {
     logsRef.current = [];
   }, []);
 
+  const resolveAlert = useCallback(async (id: number) => {
+    try {
+      await api.resolveAlert(id);
+      setAlerts(prev => prev.map(a => a.id === id ? { ...a, is_resolved: true } : a));
+    } catch (error) {
+      console.error('Failed to resolve alert:', error);
+    }
+  }, []);
+
   return {
     trafficLogs,
     alerts,
     clearAlerts,
     clearLogs,
+    resolveAlert,
   };
 }

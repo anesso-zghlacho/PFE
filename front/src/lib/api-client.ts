@@ -61,6 +61,12 @@ class ApiClient {
     });
   }
 
+  async resolveAlert(alertId: number) {
+    return this.request(`/alerts/${alertId}/resolve/`, {
+      method: 'POST',
+    });
+  }
+
   async getCurrentUser() {
     return this.request('/auth/user/');
   }
@@ -103,6 +109,23 @@ class ApiClient {
     return this.request('/auth/logout/', {
       method: 'POST',
     });
+  }
+
+  async startSniffer(interfaceName?: string) {
+    return this.request('/sniffer/start/', {
+      method: 'POST',
+      body: JSON.stringify({ interface: interfaceName }),
+    });
+  }
+
+  async stopSniffer() {
+    return this.request('/sniffer/stop/', {
+      method: 'POST',
+    });
+  }
+
+  async getSnifferStatus() {
+    return this.request('/sniffer/status/');
   }
 }
 
