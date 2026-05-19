@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart,
@@ -25,7 +25,24 @@ interface Props {
   alerts: Alert[];
 }
 
+const formatDate = (date: Date) => date.toLocaleDateString('en-GB', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
 export function DashboardOverview({ trafficLogs, alerts }: Props) {
+  const [currentDate, setCurrentDate] = useState(() => formatDate(new Date()));
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      const nextDate = formatDate(new Date());
+      setCurrentDate(prev => (prev === nextDate ? prev : nextDate));
+    }, 60_000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   const alertsByType = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const a of alerts) {
@@ -60,7 +77,7 @@ export function DashboardOverview({ trafficLogs, alerts }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Traffic"
+          title={`Total Traffic ${currentDate}`}
           value={trafficLogs.length}
           icon={<Activity className="h-5 w-5" />}
           trend="Packets captured"
