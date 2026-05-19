@@ -1,0 +1,94 @@
+\documentclass[12pt,a4paper,oneside]{report}
+
+% Load configurations
+\input{configurations/packages}
+
+\begin{document}
+
+% --- Title Page (Boumerdes Style) ---
+\thispagestyle{empty}
+\begin{center}
+    People's Democratic Republic of Algeria\\
+    Ministry of Higher Education and Scientific Research\\
+    \textbf{University M'Hamed Bougara of Boumerdes}\\
+\end{center}
+
+\begin{center}
+    \textbf{Faculty of Technology} \\
+\end{center}
+
+\begin{center}
+    \vfill
+    \begin{LARGE}
+        \textbf{FINAL YEAR PROJECT REPORT}\\
+    \end{LARGE}
+    \vfill
+    \begin{large} 
+        PRESENTED BY: \textbf{Amine}  \\
+        In Partial Fulfilment Of The Requirements For The Degree Of \\
+        \textbf{Master / Licence in Computer Science}\\
+    \end{large}
+\end{center}
+
+\vfill
+\textbf{Field: Computer Science} \\
+\textbf{Option: Software Engineering / Cybersecurity} \\
+
+\begin{center}
+    \fbox{\begin{minipage}[c]{0.9\linewidth}
+        \begin{center}
+            \begin{large}
+                \textbf{Design and Implementation of a Real-time Network Intrusion Detection System (NIDS)}
+            \end{large}
+        \end{center}
+    \end{minipage}}
+\end{center}
+
+\vfill
+JURY MEMBERS:\\
+\begin{center}
+    \begin{tabular}{lllll}
+        Pr. Name  & Professor & UMBB  & President\\
+        Dr. Name  & Professor & UMBB  & Examiner\\
+        Dr. Name  & Professor & UMBB  & Examiner\\
+    \end{tabular}
+\end{center}
+
+\begin{center}
+    Academic Year: 2025/2026
+\end{center}
+
+\newpage
+
+% --- Front Matter ---
+\chapter*{Acknowledgements}
+\thispagestyle{empty}
+I would like to express my gratitude to my supervisor...
+
+\newpage
+\chapter*{Abstract}
+\thispagestyle{empty}
+\input{sections/00_abstract}
+
+\newpage
+\pagenumbering{Roman}
+\tableofcontents
+\listoffigures
+\listoftables
+
+% --- Main Content ---
+\pagenumbering{arabic}
+\input{sections/01_introduction}
+\input{sections/02_background}
+\input{sections/03_methodology}
+\input{sections/04_results}
+
+% --- Back Matter ---
+\chapter*{General Conclusion}
+\addcontentsline{toc}{chapter}{General Conclusion}
+Summary of the project achievements and future perspectives.
+
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\end{document}

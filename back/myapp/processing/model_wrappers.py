@@ -20,7 +20,7 @@ class MockModel(BaseModel):
             raise RuntimeError('Model must be loaded before inference')
 
         packet_size = float(features.get('packet_size', 0))
-        has_syn = 'SYN' in str(features.get('tcp_flags', '')).upper()
+        has_syn = 'S' in str(features.get('tcp_flags', '')).upper()
         score = min(1.0, 0.2 + packet_size / 1500.0 * 0.6 + (0.2 if has_syn else 0.0))
         label = 'attack' if score >= 0.7 else 'normal'
         return InferenceResult(label=label, score=round(score, 4), features=features)

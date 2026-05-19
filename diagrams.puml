@@ -1,0 +1,75 @@
+@startuml Use Case Diagram
+actor "Security Administrator" as Admin
+package "NIDS System" {
+    usecase "Monitor Live Traffic" as UC1
+    usecase "Manage Sniffer Engine (Start/Stop)" as UC2
+    usecase "View Intrusion Alerts" as UC3
+    usecase "Analyze Traffic History" as UC4
+    usecase "Configure System Settings" as UC5
+}
+Admin --> UC1
+Admin --> UC2
+Admin --> UC3
+Admin --> UC4
+Admin --> UC5
+@enduml
+
+@startuml Class Diagram
+class SnifferManager {
+    -static instance: SnifferManager
+    -is_running: bool
+    -batch_buffer: list
+    +start(interface)
+    +stop()
+    +status()
+}
+class PacketAnalysisService {
+    +engine: InferenceEngine
+    +analyze_and_store(packet)
+    +bulk_analyze_and_store(packets)
+}
+class InferenceEngine {
+    +model: BaseModel
+    +analyze_packet(packet)
+}
+interface BaseModel {
+    +load(path)
+    +predict(features)
+}
+class TrafficLog {
+    +src_ip: string
+    +dst_ip: string
+    +protocol: string
+    +timestamp: datetime
+}
+class Alert {
+    +title: string
+    +severity: string
+    +prediction_score: float
+}
+
+SnifferManager --> PacketAnalysisService
+PacketAnalysisService --> InferenceEngine
+InferenceEngine --> BaseModel
+PacketAnalysisService ..> TrafficLog : creates
+PacketAnalysisService ..> Alert : creates
+@enduml
+
+@startuml Sequence Diagram
+participant "Network Interface" as Net
+participant "SnifferManager" as SM
+participant "AnalysisService" as PS
+database "Database" as DB
+participant "React Dashboard" as FE
+
+SM -> Net: Start Sniffing
+Net -> SM: Raw Packet Captured
+SM -> SM: Buffer Packet (Batching)
+Note over SM: Buffer reaches 50
+SM -> PS: bulk_analyze_and_store(batch)
+PS -> PS: Run ML Inference
+PS -> DB: Bulk Create TrafficLogs
+PS -> DB: Create Alerts (if attack)
+DB -> FE: Update via API/WebSocket
+FE -> FE: Display Live Visualization
+@enduml

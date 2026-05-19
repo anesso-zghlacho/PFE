@@ -1,0 +1,28 @@
+\chapter{Background and State of the Art}
+\label{chap:background}
+
+\section{Network Security Concepts}
+Network security involves the policies and practices adopted to prevent and monitor unauthorized access, misuse, modification, or denial of a computer network and network-accessible resources. Key concepts include confidentiality, integrity, and availability (the CIA triad).
+
+\section{Intrusion Detection Systems (IDS)}
+An Intrusion Detection System is a device or software application that monitors a network or systems for malicious activity or policy violations. Any detected activity or violation is typically reported either to an administrator or collected centrally using a security information and event management (SIEM) system.
+
+\subsection{Types of IDS}
+\begin{itemize}
+    \item \textbf{Network-based IDS (NIDS):} Monitors traffic to and from all devices on the network.
+    \item \textbf{Host-based IDS (HIDS):} Monitors important operating system files on a single host.
+\end{itemize}
+
+\subsection{Detection Methods}
+\begin{itemize}
+    \item \textbf{Signature-based Detection:} Compares traffic to a database of known attack signatures.
+    \item \textbf{Anomaly-based Detection:} Identifies deviations from a "normal" baseline of network behavior.
+\end{itemize}
+
+\section{Popular IDS Tools}
+Several open-source and commercial tools are widely used in the industry:
+\begin{itemize}
+    \item \textbf{Snort:} An open-source signature-based NIDS.
+    \item \textbf{Suricata:} A high-performance NIDS/IPS with multi-threading support.
+    \item \textbf{Zeek (formerly Bro):} A powerful network analysis framework.
+\end{itemize}

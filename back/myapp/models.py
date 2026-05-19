@@ -51,3 +51,20 @@ class Alert(models.Model):
 
     def __str__(self):
         return f"[{self.severity}] {self.title}"
+
+
+class AccessLog(models.Model):
+    ACTION_CHOICES = [
+        ('LOGIN', 'Login'),
+        ('LOGOUT', 'Logout'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    ip_address = models.CharField(max_length=45, blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.action} at {self.timestamp}"
