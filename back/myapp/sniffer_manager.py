@@ -39,6 +39,9 @@ class SnifferManager:
             logger.error(f"Failed to initialize PacketAnalysisService: {e}")
             return False, str(e)
 
+        self.batch_buffer = []
+        self.batch_size = 50
+
         def process_packet(packet):
             if self._stop_event.is_set():
                 return
@@ -52,6 +55,9 @@ class SnifferManager:
                 'protocol': packet[IP].proto,
                 'packet_size': len(packet),
                 'timestamp': packet.time,
+                'src_port': 0,
+                'dst_port': 0,
+                'tcp_flags': '',
             }
 
             if packet.haslayer(TCP):
@@ -62,10 +68,15 @@ class SnifferManager:
                 packet_dict['src_port'] = packet[UDP].sport
                 packet_dict['dst_port'] = packet[UDP].dport
 
-            try:
-                self.service.analyze_and_store(packet_dict)
-            except Exception as e:
-                logger.error(f"Error processing packet in thread: {e}")
+            self.batch_buffer.append(packet_dict)
+
+            if len(self.batch_buffer) >= self.batch_size:
+                try:
+                    self.service.bulk_analyze_and_store(self.batch_buffer)
+                    self.batch_buffer = []
+                except Exception as e:
+                    logger.error(f"Error in batch processing: {e}")
+                    self.batch_buffer = []
 
         def run_sniff():
             logger.info(f"Starting background sniffer on {self._interface or 'default'}...")
@@ -74,7 +85,8 @@ class SnifferManager:
                     iface=self._interface, 
                     prn=process_packet, 
                     stop_filter=lambda x: self._stop_event.is_set(), 
-                    store=0
+                    store=0,
+                    promisc=True
                 )
             except Exception as e:
                 logger.error(f"Sniffer thread crashed: {e}")

@@ -1,0 +1,27 @@
+ \begin{figure*}[!htb]
+\centering
+\begin{tikzpicture}
+	\begin{axis}[ 
+    width=\textwidth,
+    height=6cm,
+     symbolic x coords={20,40,60,80,100,120,140,160},
+    %\axisdefaultheight, 
+           xtick=data,
+    %nodes near coords,
+   % nodes near coords align={vertical},
+    ymajorgrids, ylabel=Fitness,xlabel=Number of mesh clients, enlargelimits=0.1,legend style={at={(0.5,1.2)}, anchor=north,legend columns=5}, ybar, bar width=5pt] 
+\addplot  [draw=none, fill=col21]  coordinates {(20,0.88) (40,0.90) (60,0.92) (80,0.90) (100,0.88) (120,0.87) (140,0.85) (160,0.71)};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%MFO
+\addplot  [draw=none, fill=col0]  coordinates {(20,0.78) (40,0.72) (60,0.76) (80,0.77) (100,0.79) (120,0.76) (140,0.73) (160,0.70)};
+%%%%%%%%%%%%FA
+\addplot  [draw=none, fill=col1]  coordinates   {(20,0.83) (40,0.83) (60,0.84) (80,0.84) (100,0.85) (120,0.81) (140,0.80) (160,0.79)};
+%%%%%%%%%%%GA
+\addplot  [draw=none, fill=col18] coordinates  {(20,0.64) (40,0.59) (60,0.59) (80,0.58) (100,0.52) (120,0.48) (140,0.48) (160,0.43)};
+%%%%%%%%%%%%%%%%%%%%%PSO
+\addplot  [draw=none, fill=col22]  coordinates   {(20,0.13) (40,0.14) (60,0.15) (80,0.14) (100,0.12) (120,0.10) (140,0.11) (160,0.11)};
+	%%%%%%%%%%%%%%%%%%%%%%%%%WOA
+%%%%%%%%%%%%%%ABC
+\legend{ASO-SA,SO-SA,ASO,SO,SA} \end{axis} \end{tikzpicture}
+\caption{Fitness under various number of mesh clients }
+\label{ASOSAmcs}
+ \end{figure*}

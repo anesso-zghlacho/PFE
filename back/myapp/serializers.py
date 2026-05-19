@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models import TrafficLog, Alert
+from .models import TrafficLog, Alert, AccessLog
 from django.contrib.auth.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['id', 'username', 'email', 'is_staff']
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -17,10 +17,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'password']
 
     def create(self, validated_data):
+        # First user to register becomes admin
+        is_first_user = not User.objects.exists()
+        
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data.get('email'),
-            password=validated_data['password']
+            password=validated_data['password'],
+            is_staff=is_first_user,
+            is_superuser=is_first_user
         )
         return user
 
@@ -84,4 +89,13 @@ class AlertSerializer(serializers.ModelSerializer):
             'traffic_log',
             'is_resolved',
         ]
+        read_only_fields = ['id', 'timestamp']
+
+
+class AccessLogSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = AccessLog
+        fields = ['id', 'username', 'action', 'ip_address', 'timestamp']
         read_only_fields = ['id', 'timestamp']

@@ -1,0 +1,32 @@
+ \begin{figure*}[hb!]
+\centering
+\begin{tikzpicture}
+	\begin{axis}[ 
+	width=\textwidth,
+    height=6cm,
+     symbolic x coords={20,40,60,80,100},
+    %\axisdefaultheight, 
+           xtick=data,
+    %nodes near coords,
+   % nodes near coords align={vertical},
+    ymajorgrids, ylabel=Mean number of mesh routers,xlabel=Number of mesh clients, enlargelimits=0.1,legend style={at={(0.5,1.2)}, anchor=north,legend columns=4}, ybar, bar width=5pt] 
+\addplot  [draw=none, fill=col21]  coordinates {(20,14.8) (40,15.7) (60,18) (80,17.3) (100,17.9)};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%MFO
+\addplot  [draw=none, fill=col0]  coordinates {(20,20.8) (40,21.5) (60,21.8) (80,22.1) (100,22.5)};
+%%%%%%%%%%%%FA
+\addplot  [draw=none, fill=col1]  coordinates   {(20,27.5) (40,26.7) (60,27.6) (80,28.2) (100,27.6)};
+%%%%%%%%%%%GA
+\addplot  [draw=none, fill=col18] coordinates  {(20,29) (40,28.2) (60,29.9) (80,30.2) (100,29)};
+%%%%%%%%%%%%%%%%%%%%%PSO
+\addplot  [draw=none, fill=col22]  coordinates   {(20,6.8) (40,7.6) (60,8.6) (80,9.3) (100,9.2)};
+	%%%%%%%%%%%%%%%%%%%%%%%%%WOA
+\addplot [draw=none, fill=col30] coordinates   {(20,6.8) (40,7.9) (60,8.4) (80,9) (100,9.1)};
+	%%%%%%%%%%%%%%%%%BA
+\addplot  [draw=none, fill=col9] coordinates  {(20,6.7) (40,8.1) (60,8.6) (80,9.7) (100,9)};
+%%%%%%%%%%SA
+\addplot  [draw=none, fill=col14]  coordinates {(20,6.5) (40,7.5) (60,7.9) (80,8.7) (100,9.7)};
+%%%%%%%%%%%%%%ABC
+\legend{BWOAS1,BWOAS2,BWOAS3,BWOAS3,BWOAV1,BWOAV2,BWOAV3,BWOAV4} \end{axis} \end{tikzpicture}
+\caption{Mean number of mesh routers under various number of mesh clients }
+\label{MCsfigure}
+ \end{figure*}

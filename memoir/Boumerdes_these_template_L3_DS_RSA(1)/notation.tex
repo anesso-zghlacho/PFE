@@ -1,0 +1,62 @@
+\begin{table}[!hbt]
+\caption{The main notations used in model formulation}%in static environment and discrete space
+\label{notations}
+\begin{center}
+\resizebox{0.9\textwidth}{!}{
+%\resizebox{\textwidth}{}{
+
+\begin{tabular}{p{4cm} p{16cm}}
+\hline
+\textbf{Parameter}    & \textbf{Description}\\\hline
+$G=(V,E)$&Undirected graph topology \\
+$V$&Set of mesh nodes\\
+$E$&Set of links between mesh nodes\\
+$MRS$&Set of mesh routers\\ 
+$MCS$&Set of mesh clients \\ 
+%$MC$&Mesh client\\
+%$MR$&Mesh router\\
+$m$&Number of mesh routers\\ 
+$n$&Number of mesh clients\\ 
+$mr_i$&The \textit{i-th} mesh router\\ 
+$mc_i$&The \textit{i-th} mesh client\\ 
+$CR_i$&Coverage radius of the \textit{i-th} mesh router\\ 
+%Pr&Placement vector of mesh routers\\ 
+%$(x_{ri},y_{ri})$& \textit{i-th} mesh router location along x and y axes. \\
+$G_i=(V_i,E_i)$& The \textit{i-th} sub-network \\
+$|G_i|$&Size of the \textit{i-th} sub-network \\
+$\phi(G)$&Network connectivity\\
+$\psi(G)$& User coverage\\
+$D$&Dimension of search space\\
+$W$&Width of the dimension\\ 
+$H$&Height of the dimension\\ 
+$ub$, $lb$&Upper and lower bound of the decision variable in search space\\
+%$d(a,b)$&distance between node $a$ and node $b$\\
+$d(mr_i,mr_j)$ &Distance between mesh router $mr_i$ and mesh router $mr_j$\\
+$\lambda$&Control parameter\\ 
+$\sigma_{ij}$&Defines if the mesh client $mc_i$ is covered by the mesh router $mr_j$\\
+
+%$G_p$&Number of groups in a population\\
+%$C_c$&Number of coyotes in each group\\
+%$Nb\_It$&Number of iterations\\ 
+%$P_s$&Population size\\
+%$N_r$&Number of runs\\
+%$SC_c^{p,t}$&The social condition of the \textit{c-th} coyote in the \textit{p-th} group at iteration $t$\\
+%$ new\_SC_c^{p,t}$&The new social condition of the  \textit{c-th} coyote in the \textit{p-th} group at iteration $t$\\
+%$ft_c^{p,t}$&Fitness function of the \textit{c-th} coyote in the \textit{p-th} group at iteration $t$\\
+%$new\_ft_c^{p,t}$&Fitness function of the new \textit{c-th} coyote in the \textit{p-th} group at iteration $t$\\
+%$\alpha^{p,t}$&Alpha coyote in the \textit{p-th} group at iteration $t$\\
+%$cultr_j^{p,t}$&The cultural tendency of the \textit{p-th} group at iteration $t$\\
+%$R^{p,t}$&The ranked social condition of the coyote in the \textit{p-th} group at iteration $t$\\
+%$age_c^{p,t}$& Age of the \textit{c-th} coyote in \textit{p-th} group at iteration $t$\\
+% $SC_{cr1}^{p,t}$, $SC_{cr2}^{p,t}$& The social condition of random coyotes $cr1$ and $cr2$ in \textit{p-th} group at \textit{t-th} iteration\\
+%$P_\alpha$&Probability of leaving a group\\
+%$P_s$&Scatter probability\\
+%$P_z$&Association probability\\
+%$r_1$,$r_2$,$r_j$,$K_j$&Random numbers in the range [0 1]\\
+\hline
+% $j_1$,$j_2$& Random dimensions of the problem\\
+% $r_j$,$K_j$& Random numbers in [0 1]\\
+\end{tabular}
+}
+\end{center}
+\end{table}

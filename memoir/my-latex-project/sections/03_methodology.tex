@@ -1,0 +1,46 @@
+\chapter{Methodology and Design}
+\label{chap:methodology}
+
+\section{System Architecture}
+Our NIDS follows a three-tier architecture designed for scalability and real-time performance. The components include the Sniffer Engine, the Backend API, and the Frontend Dashboard.
+
+\subsection{Sniffer Engine}
+The sniffer engine is responsible for raw packet capture. It utilizes the \texttt{libpcap} library to interact with network interfaces at a low level. It extracts key features from each packet, such as source/destination IP addresses, ports, protocols, and payload sizes.
+
+\subsection{Backend API (FastAPI)}
+The backend acts as the orchestrator. Developed using \textbf{FastAPI}, it provides a RESTful interface for the frontend to:
+\begin{itemize}
+    \item Start and stop the packet capture engine.
+    \item Retrieve live traffic logs stored in the database.
+    \item Receive real-time alerts through WebSockets.
+\end{itemize}
+
+\subsection{Frontend Dashboard (React)}
+The user interface is built with \textbf{React} and \textbf{Tailwind CSS}. It provides a professional and intuitive dashboard for monitoring network status, visualizing traffic patterns through charts, and managing alerts.
+
+\section{Security and Access Control}
+To ensure the integrity and confidentiality of the monitoring platform, a Role-Based Access Control (RBAC) mechanism has been implemented alongside an access logging system.
+
+\subsection{Role-Based Access Control (RBAC)}
+The system employs a two-tier access model to differentiate between administrative and analytical personnel:
+\begin{itemize}
+    \item \textbf{Administrator:} The initial user registered during system setup is automatically granted administrative privileges. Administrators have full control over the platform, including the ability to start and stop the packet capture engine, resolve security alerts, and create new analyst accounts.
+    \item \textbf{Analyst:} Analysts have read-only access to the dashboard. They can monitor real-time traffic, view threat alerts, and analyze network patterns, but they are restricted from altering the system state or managing users.
+\end{itemize}
+
+\subsection{Access Auditing}
+To maintain a secure audit trail, the system features an Access Logging module. Every authentication event (login and logout) is recorded in the database, capturing the user's identity, the type of action, the origin IP address, and an exact timestamp. This allows administrators to monitor system access and detect any unauthorized authentication attempts.
+
+\section{Implementation Details}
+\subsection{Data Flow}
+1. The Sniffer captures a packet.
+2. The Parser extracts features and identifies potential threats.
+3. The Backend stores the data in a PostgreSQL/MongoDB database.
+4. The Frontend fetches and displays the data in real-time.
+
+\subsection{Technologies Used}
+\begin{itemize}
+    \item \textbf{Language:} Python, JavaScript.
+    \item \textbf{Frameworks:} FastAPI, React.
+    \item \textbf{Libraries:} libpcap, Scapy, Chart.js.
+\end{itemize}

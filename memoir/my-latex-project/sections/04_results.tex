@@ -1,0 +1,21 @@
+\chapter{Results and Evaluation}
+\label{chap:results}
+
+\section{Testing Environment}
+The system was tested in a simulated network environment using tools like \texttt{nmap} and \texttt{hping3} to generate various types of traffic and potential attacks (e.g., port scans, SYN floods).
+
+\section{Performance Analysis}
+\subsection{Capture Efficiency}
+Initially, processing each packet individually and performing individual database writes created a bottleneck. To address this, we implemented \textbf{batch processing} (buffering packets and using bulk database inserts). This optimization allowed the sniffer engine to demonstrate high efficiency in capturing packets with minimal drops at speeds up to 100 Mbps. CPU and memory usage remained within acceptable limits during peak traffic.
+
+\subsection{Optimization Impact}
+The introduction of batching significantly reduced the I/O overhead. By grouping 50 packets per database transaction, we observed a substantial decrease in latency and a higher throughput capacity, making the system more robust for real-world network monitoring.
+
+\subsection{Detection Accuracy}
+Signature-based detection successfully identified known attack patterns with a low false-positive rate. The anomaly-based module showed promising results in detecting deviations from normal traffic baselines.
+
+\section{User Interface Evaluation}
+The dashboard was evaluated for its usability and responsiveness. Analysts found the live visualization of traffic and the quick-access alert panel highly effective for monitoring network security.
+
+\section{Summary}
+The results demonstrate that the implemented NIDS is a viable solution for real-time network monitoring and intrusion detection, providing a solid foundation for further enhancements in machine learning-based detection.

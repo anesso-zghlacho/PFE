@@ -8,8 +8,9 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import TrafficLog, Alert
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+from django.contrib.auth.models import User
+from .models import TrafficLog, Alert, AccessLog
 from .serializers import (
     TrafficLogSerializer,
     AlertSerializer,
@@ -17,6 +18,7 @@ from .serializers import (
     RegisterSerializer,
     LoginSerializer,
     UserSerializer,
+    AccessLogSerializer,
 )
 from .processing.model_factory import create_model
 from .processing.service import PacketAnalysisService
@@ -40,10 +42,19 @@ def home(request):
     return render(request, 'home.html')
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_setup_status(request):
+    return Response({'needs_setup': not User.objects.exists()})
+
+
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def api_register(request):
+    if User.objects.exists() and not (request.user.is_authenticated and request.user.is_staff):
+        return Response({'error': 'Only administrators can create new accounts.'}, status=status.HTTP_403_FORBIDDEN)
+        
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
@@ -63,6 +74,8 @@ def api_login(request):
         )
         if user:
             login(request, user)
+            ip = request.META.get('REMOTE_ADDR')
+            AccessLog.objects.create(user=user, action='LOGIN', ip_address=ip)
             return Response({'message': 'Login successful'})
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -72,6 +85,9 @@ def api_login(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def api_logout(request):
+    if request.user.is_authenticated:
+        ip = request.META.get('REMOTE_ADDR')
+        AccessLog.objects.create(user=request.user, action='LOGOUT', ip_address=ip)
     logout(request)
     return Response({'message': 'Logout successful'})
 
@@ -187,8 +203,18 @@ class AlertViewSet(viewsets.ModelViewSet):
         return Response({'status': 'Alert resolved'})
 
 
+class AccessLogViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = AccessLog.objects.all()
+    serializer_class = AccessLogSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['timestamp']
+    ordering = ['-timestamp']
+    permission_classes = [IsAdminUser]
+
+
+@csrf_exempt
 @api_view(['POST'])
-@permission_classes([AllowAny]) # Change to IsAuthenticated if needed
+@permission_classes([IsAdminUser])
 def api_sniffer_start(request):
     interface = request.data.get('interface')
     success, message = sniffer_manager.start(interface=interface)
@@ -197,8 +223,9 @@ def api_sniffer_start(request):
     return Response({'error': message}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@csrf_exempt
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdminUser])
 def api_sniffer_stop(request):
     success, message = sniffer_manager.stop()
     if success:
