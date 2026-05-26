@@ -83,9 +83,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Sentinel IDS — Internal Network Monitoring" },
+      { title: "Soficlef Sentinel Flow IDS — Internal Network Monitoring" },
       { name: "description", content: "Real-time intrusion detection dashboard for internal networks." },
-      { property: "og:title", content: "Sentinel IDS" },
+      { property: "og:title", content: "Soficlef Sentinel Flow IDS" },
       { property: "og:description", content: "Real-time intrusion detection dashboard for internal networks." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -146,7 +146,7 @@ function AuthGuard() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm font-medium text-muted-foreground animate-pulse">Initializing Sentinel Systems...</p>
+          <p className="text-sm font-medium text-muted-foreground animate-pulse">Initializing Soficlef Sentinel Flow Systems...</p>
         </div>
       </div>
     );

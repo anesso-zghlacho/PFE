@@ -58,10 +58,10 @@ export function TrafficTable({
                 <span>{log.destIp}</span>
                 <span className="text-muted-foreground">:{log.destPort}</span>
               </td>
-              <td className="px-4 py-2.5 text-right">
+              <td className="px-4 py-2.5 text-right font-mono text-xs font-semibold">
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-xs font-medium",
+                    "inline-flex items-center gap-1.5",
                     log.status === "Secure" ? "text-success" : "text-destructive",
                   )}
                 >
@@ -71,7 +71,7 @@ export function TrafficTable({
                       log.status === "Secure" ? "bg-success" : "bg-destructive",
                     )}
                   />
-                  {log.status}
+                  {log.predictedLabel}
                 </span>
               </td>
             </tr>

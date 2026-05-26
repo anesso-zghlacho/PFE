@@ -54,7 +54,7 @@ function AccessLogsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Authentication History</h1>
           <p className="text-sm text-muted-foreground">
-            Audit trail of all login and logout events in Sentinel IDS.
+            Audit trail of all login and logout events in Soficlef Sentinel Flow IDS.
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium">

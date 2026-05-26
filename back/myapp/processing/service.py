@@ -48,10 +48,20 @@ class PacketAnalysisService:
         )
 
         alert = None
-        if result.label == 'attack':
+        is_attack = result.label.upper() not in ['NORMAL', 'SECURE']
+        if is_attack:
+            title_map = {
+                'PORTSCAN': 'Portscan Intrusion Detected',
+                'SYNC FLOOD': 'SYN Flood DDoS Attack',
+                'DDOS': 'DDoS Attack Detected',
+                'ATTACK': 'Detected Intrusion Attempt'
+            }
+            label_upper = result.label.upper()
+            title = title_map.get(label_upper, f'{result.label} Intrusion Detected')
+
             alert = Alert.objects.create(
-                title='Detected intrusion attempt',
-                description=f'An attack was detected with confidence {result.score:.2f}',
+                title=title,
+                description=f'An active {result.label} attack was detected with confidence {result.score:.2f}.',
                 severity=self._severity_from_score(result.score),
                 source_ip=result.features.get('src_ip', '0.0.0.0'),
                 traffic_log=traffic_log,

@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Shield, Activity, List, Settings, ShieldAlert, LogOut, User, Users, FileText } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import logoUrl from "@/assets/logo.png";
 import {
   Sidebar,
   SidebarContent,
@@ -36,13 +37,13 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/15 text-primary">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/15 text-primary shrink-0">
             <Activity className="h-4 w-4" />
           </div>
-          <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold tracking-tight">Sentinel IDS</span>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Internal Network
+          <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden gap-0.5">
+            <img src={logoUrl} alt="Soficlef" className="h-3.5 w-auto object-contain self-start" />
+            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Sentinel Flow IDS
             </span>
           </div>
         </div>

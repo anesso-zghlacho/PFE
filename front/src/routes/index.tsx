@@ -12,7 +12,7 @@ import { useMonitoring } from "@/context/monitoring-context";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Overview — Sentinel IDS" },
+      { title: "Overview — Soficlef Sentinel Flow IDS" },
       { name: "description", content: "Live overview of internal network traffic and security posture." },
     ],
   }),

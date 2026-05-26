@@ -15,6 +15,7 @@ export interface TrafficLog {
   destPort: number;
   status: LogStatus;
   bytes: number;
+  predictedLabel: string;
 }
 
 export type ThreatSeverity = "low" | "medium" | "high" | "critical";
@@ -62,7 +63,17 @@ export function MonitoringProvider({ children }: { children: React.ReactNode }) 
   const [uniqueProtocols, setUniqueProtocols] = React.useState(0);
   const [logs, setLogs] = React.useState<TrafficLog[]>([]);
   const [alerts, setAlerts] = React.useState<ThreatAlert[]>([]);
-  const [series, setSeries] = React.useState<TrafficPoint[]>([]);
+  const [series, setSeries] = React.useState<TrafficPoint[]>(() => {
+    const arr: TrafficPoint[] = [];
+    const now = Date.now();
+    for (let i = 59; i >= 0; i--) {
+      const t = now - i * 30000; // 30-second intervals for 30 minutes total
+      const base = 85 + Math.sin(i / 4.0) * 35 + Math.cos(i / 2.0) * 15;
+      const val = Math.max(10, Math.round(base + Math.random() * 20));
+      arr.push({ t, kbps: val });
+    }
+    return arr;
+  });
   const statsRef = React.useRef({ bytes: 0, time: 0 });
 
   const fetchStatus = async () => {
@@ -117,8 +128,9 @@ export function MonitoringProvider({ children }: { children: React.ReactNode }) 
         sourcePort: l.src_port,
         destIp: l.dst_ip,
         destPort: l.dst_port,
-        status: l.predicted_label === 'normal' ? "Secure" : l.predicted_label === 'warning' ? "Warning" : "Critical",
+        status: (l.predicted_label || '').toUpperCase() === 'NORMAL' ? "Secure" : "Critical",
         bytes: l.byte_count,
+        predictedLabel: l.predicted_label || 'NORMAL',
       })) : [];
 
       const mappedAlerts: ThreatAlert[] = Array.isArray(alertsData) ? alertsData.map((a: any) => ({

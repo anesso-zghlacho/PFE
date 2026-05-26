@@ -52,7 +52,7 @@ function UsersManagement() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
         <p className="text-sm text-muted-foreground">
-          Create new Analyst accounts for the Sentinel IDS platform.
+          Create new Analyst accounts for the Soficlef Sentinel Flow IDS platform.
         </p>
       </div>
 

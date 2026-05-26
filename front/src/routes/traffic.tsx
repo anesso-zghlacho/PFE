@@ -5,7 +5,7 @@ import { TrafficTable } from "@/components/traffic-table";
 export const Route = createFileRoute("/traffic")({
   head: () => ({
     meta: [
-      { title: "Traffic Logs — Sentinel IDS" },
+      { title: "Traffic Logs — Soficlef Sentinel Flow IDS" },
       { name: "description", content: "Live capture of all packets traversing the internal network." },
     ],
   }),
