@@ -132,9 +132,29 @@ class TrafficLogViewSet(viewsets.ModelViewSet):
         })
 
 
-# Initialize a lightweight development-only pipeline.
-ml_model = create_model('mock')
-ml_model.load('development')
+# Load the hierarchical composite classifier if the pickle files exist,
+# otherwise fallback to the mock model for development.
+import os
+import logging
+logger = logging.getLogger(__name__)
+
+models_dir = os.path.join(os.path.dirname(__file__), 'processing', 'models')
+scaler_file = os.path.join(models_dir, 'network_scaler.pkl')
+
+if os.path.exists(scaler_file):
+    try:
+        ml_model = create_model('hierarchical')
+        ml_model.load(models_dir)
+        logger.info("Successfully loaded Hierarchical IDS Models from processing/models/")
+    except Exception as e:
+        logger.error(f"Error loading Hierarchical IDS Models: {e}. Falling back to mock model.")
+        ml_model = create_model('mock')
+        ml_model.load('development')
+else:
+    logger.warning("No ML model folder/scaler found at processing/models/network_scaler.pkl. Falling back to mock model.")
+    ml_model = create_model('mock')
+    ml_model.load('development')
+
 packet_analysis_service = PacketAnalysisService(ml_model)
 
 

@@ -68,8 +68,8 @@ class PacketIngestionTests(TestCase):
             'src_port': 12345,
             'dst_port': 80,
             'protocol': 6,
-            'packet_size': 900,
-            'tcp_flags': 'SYN',
+            'packet_size': 100,
+            'tcp_flags': '',
         }
 
         response = self.client.post(self.url, payload, content_type='application/json')

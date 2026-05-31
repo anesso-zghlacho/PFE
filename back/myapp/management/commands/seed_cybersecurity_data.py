@@ -116,56 +116,41 @@ class Command(BaseCommand):
         remote_ips = ['142.250.190.46', '34.206.140.23', '104.244.42.1', '13.32.110.42', '1.1.1.1', '8.8.8.8', '52.223.19.124']
         protocols = [('6', 'TCP'), ('17', 'UDP'), ('1', 'ICMP')]
 
-        self.stdout.write('Generating 250 realistic traffic and alert records matching detection classes...')
+        self.stdout.write('Generating high-fidelity traffic and alert records...')
         now = timezone.now()
 
-        # Seed traffic log database entries spread over the last 45 minutes
+        # Seed lists
         logs = []
-        for i in range(250):
+        alert_associations = [] # List of tuples: (alert_template_dict, log_index_in_logs_list)
+
+        # 1. Generate ~180 normal logs spread over the last 45 minutes
+        for i in range(180):
             time_offset = random.randint(1, 2700) # up to 45 minutes ago
             log_time = now - timedelta(seconds=time_offset)
             
-            # Determine if this entry will be an attack
-            is_attack = random.random() < 0.15  # 15% attack traffic for richer screenshot representation
+            src_ip = random.choice(local_ips)
+            dst_ip = random.choice(remote_ips)
+            if random.random() < 0.3:
+                src_ip, dst_ip = dst_ip, src_ip
             
-            if is_attack:
-                template = random.choice(threat_templates)
-                src_ip = template['src_ip']
-                dst_ip = template['dst_ip']
-                src_port = template['src_port']
-                dst_port = template['dst_port']
-                proto = template['protocol']
-                flags = template['tcp_flags']
-                p_size = template['packet_size']
-                label = template['predicted_label']
-                score = template['confidence']
-            else:
-                src_ip = random.choice(local_ips)
-                dst_ip = random.choice(remote_ips)
-                if random.random() < 0.3:
-                    src_ip, dst_ip = dst_ip, src_ip
-                
-                proto_code, proto_name = random.choice(protocols)
-                proto = proto_code
-                
-                if proto_code == '6':  # TCP
-                    src_port = random.randint(32768, 65535)
-                    dst_port = random.choice([80, 443, 8080])
-                    flags = random.choice(['A', 'PA', 'FA'])
-                elif proto_code == '17':  # UDP
-                    src_port = random.randint(32768, 65535)
-                    dst_port = random.choice([53, 123])
-                    flags = ''
-                else:  # ICMP
-                    src_port = 0
-                    dst_port = 0
-                    flags = ''
-                
-                p_size = random.randint(64, 1500)
-                label = 'NORMAL'
-                score = random.uniform(0.01, 0.15)
-
-            # Create TrafficLog object
+            proto_code, proto_name = random.choice(protocols)
+            proto = proto_code
+            
+            if proto_code == '6':  # TCP
+                src_port = random.randint(32768, 65535)
+                dst_port = random.choice([80, 443, 8080])
+                flags = random.choice(['A', 'PA', 'FA'])
+            elif proto_code == '17':  # UDP
+                src_port = random.randint(32768, 65535)
+                dst_port = random.choice([53, 123])
+                flags = ''
+            else:  # ICMP
+                src_port = 0
+                dst_port = 0
+                flags = ''
+            
+            p_size = random.randint(64, 1500)
+            
             log = TrafficLog(
                 src_ip=src_ip,
                 dst_ip=dst_ip,
@@ -182,35 +167,145 @@ class Command(BaseCommand):
                 syn_count=1 if 'S' in flags else 0,
                 ack_count=1 if 'A' in flags else 0,
                 fin_count=1 if 'F' in flags else 0,
-                predicted_label=label,
-                confidence_score=score,
+                predicted_label='NORMAL',
+                confidence_score=random.uniform(0.01, 0.15),
                 timestamp=log_time
             )
             logs.append(log)
 
+        # Helper to generate a baseline timestamp for attacks
+        def get_random_baseline():
+            return now - timedelta(seconds=random.randint(60, 2600))
+
+        # 2. Generate Attack Sessions
+        # We will generate 2 sessions for each of our 6 threat templates (12 alerts total)
+        for template in threat_templates:
+            for session_idx in range(2):
+                baseline_time = get_random_baseline()
+                label = template['predicted_label']
+                
+                if label == 'Portscan':
+                    # Generate a sequence of scanned ports
+                    base_ports = [21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445, 993, 1433, 3306, 3389, 5432, 8080]
+                    random.shuffle(base_ports)
+                    # Use 12 to 18 ports for this scan session
+                    scan_ports = base_ports[:random.randint(12, 18)]
+                    scan_ports.sort() # sequential probe appearance
+                    
+                    last_log_idx = None
+                    for idx, port in enumerate(scan_ports):
+                        # Close timestamps: spaced by 100-300ms
+                        packet_time = baseline_time + timedelta(milliseconds=idx * 200 + random.randint(-50, 50))
+                        
+                        log = TrafficLog(
+                            src_ip=template['src_ip'],
+                            dst_ip=template['dst_ip'],
+                            src_port=random.randint(32768, 65535),
+                            dst_port=port,
+                            protocol=template['protocol'],
+                            packet_size=template['packet_size'] + random.randint(-10, 10),
+                            tcp_flags=template['tcp_flags'],
+                            duration=random.uniform(0.01, 0.05),
+                            packet_count=1,
+                            byte_count=template['packet_size'],
+                            bytes_per_packet=template['packet_size'],
+                            packets_per_sec=5.0,
+                            syn_count=1 if 'S' in template['tcp_flags'] else 0,
+                            ack_count=1 if 'A' in template['tcp_flags'] else 0,
+                            fin_count=1 if 'F' in template['tcp_flags'] else 0,
+                            predicted_label=label,
+                            confidence_score=round(template['confidence'] + random.uniform(-0.04, 0.03), 4),
+                            timestamp=packet_time
+                        )
+                        logs.append(log)
+                        last_log_idx = len(logs) - 1
+                    
+                    # Associate the Alert with the final probed port log
+                    if last_log_idx is not None:
+                        alert_associations.append((template, last_log_idx))
+
+                elif label == 'Sync flood':
+                    # Generate a high rate of TCP SYN packets to the same destination port
+                    num_packets = random.randint(35, 50)
+                    last_log_idx = None
+                    for idx in range(num_packets):
+                        # Millisecond spacing (10-30ms)
+                        packet_time = baseline_time + timedelta(milliseconds=idx * 20 + random.randint(-5, 5))
+                        
+                        log = TrafficLog(
+                            src_ip=template['src_ip'],
+                            dst_ip=template['dst_ip'],
+                            src_port=random.randint(32768, 65535),
+                            dst_port=template['dst_port'],
+                            protocol=template['protocol'],
+                            packet_size=template['packet_size'],
+                            tcp_flags=template['tcp_flags'],
+                            duration=random.uniform(0.001, 0.01),
+                            packet_count=1,
+                            byte_count=template['packet_size'],
+                            bytes_per_packet=template['packet_size'],
+                            packets_per_sec=50.0,
+                            syn_count=1,
+                            ack_count=0,
+                            fin_count=0,
+                            predicted_label=label,
+                            confidence_score=round(template['confidence'] + random.uniform(-0.02, 0.01), 4),
+                            timestamp=packet_time
+                        )
+                        logs.append(log)
+                        last_log_idx = len(logs) - 1
+                    
+                    if last_log_idx is not None:
+                        alert_associations.append((template, last_log_idx))
+
+                elif label == 'DDoS':
+                    # Generate volumetric packets from multiple different source IPs targeting the victim IP/port
+                    num_packets = random.randint(45, 60)
+                    # Simulating a botnet of 6-10 distinct IPs
+                    botnet_ips = [f"185.220.101.{random.randint(2, 254)}" for _ in range(random.randint(6, 10))]
+                    
+                    last_log_idx = None
+                    for idx in range(num_packets):
+                        # Spaced by 15-40ms
+                        packet_time = baseline_time + timedelta(milliseconds=idx * 25 + random.randint(-5, 5))
+                        src_ip = random.choice(botnet_ips)
+                        
+                        log = TrafficLog(
+                            src_ip=src_ip,
+                            dst_ip=template['dst_ip'],
+                            src_port=random.randint(1024, 65535),
+                            dst_port=template['dst_port'],
+                            protocol=template['protocol'],
+                            packet_size=template['packet_size'] + random.randint(-50, 150),
+                            tcp_flags=template['tcp_flags'],
+                            duration=random.uniform(0.01, 0.2),
+                            packet_count=random.randint(1, 5),
+                            byte_count=template['packet_size'] * random.randint(1, 5),
+                            bytes_per_packet=template['packet_size'],
+                            packets_per_sec=40.0,
+                            syn_count=0,
+                            ack_count=1,
+                            fin_count=0,
+                            predicted_label=label,
+                            confidence_score=round(template['confidence'] + random.uniform(-0.03, 0.02), 4),
+                            timestamp=packet_time
+                        )
+                        logs.append(log)
+                        last_log_idx = len(logs) - 1
+                    
+                    if last_log_idx is not None:
+                        # Use the last packet's source IP as the trigger source IP for this alert
+                        rep_template = template.copy()
+                        rep_template['src_ip'] = logs[last_log_idx].src_ip
+                        alert_associations.append((rep_template, last_log_idx))
+
         # Bulk save traffic logs
-        TrafficLog.objects.bulk_create(logs)
-        
-        # Re-fetch logs to have database IDs for Alert ForeignKey
-        saved_logs = list(TrafficLog.objects.all())
+        created_logs = TrafficLog.objects.bulk_create(logs)
 
-        # Generate Alert records linked to the attack logs
+        # Generate Alert records linked to the corresponding logs
         alerts_seeded = 0
-        used_log_ids = set()
-
-        for i in range(20):
-            # Select an attack traffic log (non-NORMAL label)
-            attack_logs = [l for l in saved_logs if l.predicted_label != 'NORMAL' and l.id not in used_log_ids]
-            if not attack_logs:
-                break
-            
-            selected_log = random.choice(attack_logs)
-            used_log_ids.add(selected_log.id)
-            
-            # Find a matching threat template for this label
-            matching_templates = [t for t in threat_templates if t['predicted_label'] == selected_log.predicted_label]
-            template = random.choice(matching_templates) if matching_templates else random.choice(threat_templates)
-            
+        for template, log_idx in alert_associations:
+            selected_log = created_logs[log_idx]
             is_resolved = random.random() < 0.25
             
             alert = Alert.objects.create(
@@ -222,6 +317,7 @@ class Command(BaseCommand):
                 traffic_log=selected_log,
                 is_resolved=is_resolved
             )
+            # Use raw query or update to set exact timestamp (django overrides timestamp on create if it auto-updates)
             Alert.objects.filter(pk=alert.pk).update(timestamp=selected_log.timestamp)
             alerts_seeded += 1
 
@@ -243,5 +339,5 @@ class Command(BaseCommand):
             AccessLog.objects.filter(pk=access_log.pk).update(timestamp=log_time)
 
         self.stdout.write(self.style.SUCCESS(
-            f'Seeded successfully: {len(saved_logs)} TrafficLogs with exact labels, {alerts_seeded} Alerts, 12 AccessLogs.'
+            f'Seeded successfully: {len(created_logs)} TrafficLogs with exact labels, {alerts_seeded} Alerts, 12 AccessLogs.'
         ))

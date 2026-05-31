@@ -15,45 +15,215 @@ Admin --> UC5
 @enduml
 
 @startuml Class Diagram
-class SnifferManager {
-    -static instance: SnifferManager
-    -is_running: bool
-    -batch_buffer: list
-    +start(interface)
-    +stop()
-    +status()
-}
-class PacketAnalysisService {
-    +engine: InferenceEngine
-    +analyze_and_store(packet)
-    +bulk_analyze_and_store(packets)
-}
-class InferenceEngine {
-    +model: BaseModel
-    +analyze_packet(packet)
-}
-interface BaseModel {
-    +load(path)
-    +predict(features)
-}
-class TrafficLog {
-    +src_ip: string
-    +dst_ip: string
-    +protocol: string
-    +timestamp: datetime
-}
-class Alert {
-    +title: string
-    +severity: string
-    +prediction_score: float
+
+skinparam backgroundColor #FFFFFF
+skinparam handwritten false
+skinparam class {
+    BackgroundColor #F8F9FA
+    BorderColor #A0AAB2
+    ArrowColor #5E6A75
+    FontSize 12
+    HeaderBackgroundColor #E9ECEF
 }
 
-SnifferManager --> PacketAnalysisService
-PacketAnalysisService --> InferenceEngine
-InferenceEngine --> BaseModel
-PacketAnalysisService ..> TrafficLog : creates
-PacketAnalysisService ..> Alert : creates
+package "Django Database Models" as DBModels {
+    class TrafficLog {
+        + id : int
+        + src_ip : String
+        + dst_ip : String
+        + src_port : int
+        + dst_port : int
+        + protocol : String
+        + packet_size : int
+        + tcp_flags : String
+        + duration : float
+        + packet_count : int
+        + byte_count : int
+        + bytes_per_packet : float
+        + packets_per_sec : float
+        + syn_count : int
+        + ack_count : int
+        + fin_count : int
+        + predicted_label : String
+        + confidence_score : float
+        + features : JSON
+        + timestamp : DateTime
+        + __str__() : String
+    }
+
+    class Alert {
+        + id : int
+        + title : String
+        + description : String
+        + severity : String
+        + source_ip : String
+        + prediction_score : float
+        + timestamp : DateTime
+        + traffic_log : TrafficLog [0..1]
+        + is_resolved : boolean
+        + __str__() : String
+    }
+
+    class AccessLog {
+        + id : int
+        + user : User
+        + action : String
+        + ip_address : String
+        + timestamp : DateTime
+        + __str__() : String
+    }
+
+    class User {
+        + id : int
+        + username : String
+        + email : String
+        + is_staff : boolean
+    }
+}
+
+package "Notification Subsystem" as Notifications {
+    interface NotificationService {
+        + {abstract} notify(title: String, description: String, severity: String) : void
+    }
+
+    class ConsoleNotificationService {
+        + notify(title: String, description: String, severity: String) : void
+    }
+
+    class SlackNotificationService {
+        + webhook_url : String
+        + notify(title: String, description: String, severity: String) : void
+    }
+}
+
+package "ML Inference Pipeline" as MLPipeline {
+    class InferenceResult <<dataclass>> {
+        + label : String
+        + score : float
+        + features : Dict
+    }
+
+    interface BaseModel {
+        + {abstract} load(model_path: String) : void
+        + {abstract} predict(features: Dict) : InferenceResult
+        + {abstract} metadata() : Dict
+    }
+
+    class RandomForestModel {
+        + model : Any
+        + loaded : boolean
+        + feature_order : List<String>
+        + load(model_path: String) : void
+        + predict(features: Dict) : InferenceResult
+        + metadata() : Dict
+        - _vectorize(features: Dict) : np.ndarray
+    }
+
+    class BinaryAnomalyClassifierRF {
+        + load(model_path: String) : void
+        + predict(features: Dict) : InferenceResult
+    }
+
+    class PortscanClassifierRF {
+        + load(model_path: String) : void
+        + predict(features: Dict) : InferenceResult
+    }
+
+    class SynFloodClassifierRF {
+        + load(model_path: String) : void
+        + predict(features: Dict) : InferenceResult
+    }
+
+    class DDoSClassifierRF {
+        + load(model_path: String) : void
+        + predict(features: Dict) : InferenceResult
+    }
+
+    class BotnetClassifierRF {
+        + load(model_path: String) : void
+        + predict(features: Dict) : InferenceResult
+    }
+
+    class HierarchicalIDSClassifier {
+        + scaler : Any
+        + binary_model : BinaryAnomalyClassifierRF
+        + synflood_model : SynFloodClassifierRF
+        + botnet_model : BotnetClassifierRF
+        + ddos_model : DDoSClassifierRF
+        + portscan_model : PortscanClassifierRF
+        + loaded : boolean
+        + feature_columns : List<String>
+        + load(model_dir: String) : void
+        + predict(features: Dict) : InferenceResult
+        + metadata() : Dict
+    }
+
+    class InferenceEngine {
+        + model : BaseModel
+        + analyze_packet(packet: Dict) : InferenceResult
+        + analyze_stream(packets: Iterable<Dict>) : Iterator<InferenceResult>
+    }
+
+    class PacketAnalysisService {
+        + engine : InferenceEngine
+        + notification_service : NotificationService
+        + analyze_and_store(packet: Dict) : Tuple<InferenceResult, TrafficLog, Alert>
+        + bulk_analyze_and_store(packets: List<Dict>) : int
+        - _severity_from_score(score: float) : String
+    }
+}
+
+package "Sniffing & Queueing Engine" as SnifferEngine {
+    class SnifferManager <<singleton>> {
+        - {static} _instance : SnifferManager
+        - {static} _lock : Lock
+        - _thread : Thread
+        - _consumer_thread : Thread
+        - _stop_event : Event
+        - _is_running : boolean
+        - _interface : String
+        + packet_queue : Queue
+        + service : PacketAnalysisService
+        + start(interface: String) : Tuple<boolean, String>
+        + stop() : Tuple<boolean, String>
+        + status() : Dict
+        - _init_manager() : void
+    }
+}
+
+' Relations
+DBModels -[hidden]down- Notifications
+Notifications -[hidden]down- MLPipeline
+MLPipeline -[hidden]down- SnifferEngine
+Alert "0..*" o-- "0..1" TrafficLog : references >
+AccessLog "0..*" o-- "1" User : logs action of >
+
+BaseModel <|.. RandomForestModel
+BaseModel <|.. HierarchicalIDSClassifier
+RandomForestModel <|-- BinaryAnomalyClassifierRF
+RandomForestModel <|-- PortscanClassifierRF
+RandomForestModel <|-- SynFloodClassifierRF
+RandomForestModel <|-- DDoSClassifierRF
+RandomForestModel <|-- BotnetClassifierRF
+HierarchicalIDSClassifier *-- BinaryAnomalyClassifierRF : composes >
+HierarchicalIDSClassifier *-- SynFloodClassifierRF : composes >
+HierarchicalIDSClassifier *-- BotnetClassifierRF : composes >
+HierarchicalIDSClassifier *-- DDoSClassifierRF : composes >
+HierarchicalIDSClassifier *-- PortscanClassifierRF : composes >
+
+InferenceEngine o-- BaseModel : uses >
+PacketAnalysisService *-- InferenceEngine : composed of >
+PacketAnalysisService o-- NotificationService : uses >
+
+NotificationService <|.. ConsoleNotificationService
+NotificationService <|.. SlackNotificationService
+
+SnifferManager *-- PacketAnalysisService : uses >
+SnifferManager ..> TrafficLog : creates (via service) >
+SnifferManager ..> Alert : creates (via service) >
+
 @enduml
+
 
 @startuml Sequence Diagram
 participant "Network Interface" as Net

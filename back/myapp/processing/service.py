@@ -77,9 +77,8 @@ class PacketAnalysisService:
         return result, traffic_log, alert
 
     def bulk_analyze_and_store(self, packets: list[dict]) -> int:
-        """Analyzes a list of packets and stores them in bulk."""
+        """Analyzes a list of packets and stores them in bulk, creating alerts for threats."""
         logs_to_create = []
-        alerts_to_create = []
         
         for packet in packets:
             result = self.engine.analyze_packet(packet)
@@ -101,19 +100,45 @@ class PacketAnalysisService:
                 timestamp=dt_timestamp,
             )
             logs_to_create.append(log)
-            
-            if result.label == 'attack':
-                # Note: For bulk_create, we can't easily link alerts to logs without IDs.
-                # However, we can store them and link them later or just store them separately.
-                # For simplicity in this PFE context, we'll store logs first.
-                pass
 
         # Bulk create logs
-        TrafficLog.objects.bulk_create(logs_to_create)
+        created_logs = TrafficLog.objects.bulk_create(logs_to_create)
         
-        # In a real system, we'd handle alerts more carefully, 
-        # but for performance, bulk_create for logs is the main gain.
-        return len(logs_to_create)
+        alerts_to_create = []
+        title_map = {
+            'PORTSCAN': 'Portscan Intrusion Detected',
+            'SYNC FLOOD': 'SYN Flood DDoS Attack',
+            'DDOS': 'DDoS Attack Detected',
+            'ATTACK': 'Detected Intrusion Attempt'
+        }
+        
+        for log in created_logs:
+            is_attack = log.predicted_label.upper() not in ['NORMAL', 'SECURE']
+            if is_attack:
+                label_upper = log.predicted_label.upper()
+                title = title_map.get(label_upper, f'{log.predicted_label} Intrusion Detected')
+                
+                alert = Alert(
+                    title=title,
+                    description=f'An active {log.predicted_label} attack was detected with confidence {log.confidence_score:.2f}.',
+                    severity=self._severity_from_score(log.confidence_score),
+                    source_ip=log.src_ip,
+                    traffic_log=log,
+                    prediction_score=log.confidence_score,
+                )
+                alerts_to_create.append(alert)
+                
+                # Trigger console notification
+                self.notification_service.notify(
+                    title=alert.title,
+                    description=f"Confidence: {alert.prediction_score:.2f} | Source: {alert.source_ip}",
+                    severity=alert.severity
+                )
+
+        if alerts_to_create:
+            Alert.objects.bulk_create(alerts_to_create)
+            
+        return len(created_logs)
 
     def _severity_from_score(self, score: float) -> str:
         if score >= 0.9:

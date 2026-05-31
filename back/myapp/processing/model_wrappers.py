@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from typing import Any, Dict
-
 import numpy as np
 
 from .model_base import BaseModel, FeatureDict, InferenceResult
@@ -34,31 +33,39 @@ class MockModel(BaseModel):
         }
 
 
-class SklearnModel(BaseModel):
+class RandomForestModel(BaseModel):
+    """Base wrapper for all Scikit-Learn Random Forest classifiers."""
+
     def __init__(self, feature_order: list[str] | None = None) -> None:
         self.model = None
         self.loaded = False
         self.feature_order = feature_order or [
-            'packet_size', 'protocol', 'src_port', 'dst_port',
-            'is_tcp', 'is_udp', 'is_icmp', 'src_ip_private', 'dst_ip_private'
+            'Flow Duration', 'Flow Bytes/s', 'Flow IAT Mean', 'Flow IAT Std',
+            'Fwd IAT Total', 'Bwd IAT Total', 'Active Mean', 'Idle Mean',
+            'Bwd Bulk Rate Avg', 'Fwd Bulk Rate Avg', 'Total TCP Flow Time',
+            'FIN Flag Count', 'SYN Flag Count', 'RST Flag Count',
+            'PSH Flag Count', 'ACK Flag Count', 'Fwd PSH Flags', 'Bwd PSH Flags',
+            'Total Fwd Packet', 'Total Bwd packets',
+            'Flow Packets/s', 'Fwd Packets/s', 'Bwd Packets/s',
+            'Packet Length Mean', 'Packet Length Std',
+            'Fwd URG Flags', 'Bwd URG Flags', 'ICMP Code', 'ICMP Type'
         ]
 
     def load(self, model_path: str) -> None:
         try:
-            import pickle
+            import joblib
         except ImportError as exc:
-            raise ImportError('scikit-learn is required to load sklearn models') from exc
+            raise ImportError('joblib is required to load RandomForest models') from exc
 
         if not os.path.exists(model_path):
-            raise FileNotFoundError(f'Model file not found: {model_path}')
+            raise FileNotFoundError(f'Random Forest model file not found: {model_path}')
 
-        with open(model_path, 'rb') as handle:
-            self.model = pickle.load(handle)
+        self.model = joblib.load(model_path)
         self.loaded = True
 
     def predict(self, features: FeatureDict) -> InferenceResult:
         if not self.loaded or self.model is None:
-            raise RuntimeError('Sklearn model is not loaded')
+            raise RuntimeError('Random Forest model is not loaded')
 
         vector = self._vectorize(features)
         prediction = int(self.model.predict(vector)[0])
@@ -69,104 +76,176 @@ class SklearnModel(BaseModel):
 
     def metadata(self) -> Dict[str, Any]:
         return {
-            'name': 'SklearnModel',
+            'name': 'RandomForestModel',
             'framework': 'scikit-learn',
-            'type': 'sklearn',
+            'type': 'sklearn_rf',
         }
 
     def _vectorize(self, features: FeatureDict) -> np.ndarray:
-        values = [float(features.get(key, 0)) for key in self.feature_order]
+        values = [float(features.get(key, 0.0) or 0.0) for key in self.feature_order]
         return np.asarray([values], dtype=np.float32)
 
 
-class PyTorchModel(BaseModel):
-    def __init__(self, feature_order: list[str] | None = None) -> None:
-        self.model = None
+class BinaryAnomalyClassifierRF(RandomForestModel):
+    def metadata(self) -> Dict[str, Any]:
+        meta = super().metadata()
+        meta.update({'name': 'BinaryAnomalyClassifierRF', 'role': 'tier_1_anomaly_detector'})
+        return meta
+
+
+class PortscanClassifierRF(RandomForestModel):
+    def metadata(self) -> Dict[str, Any]:
+        meta = super().metadata()
+        meta.update({'name': 'PortscanClassifierRF', 'role': 'tier_2_portscan_detector'})
+        return meta
+
+
+class SynFloodClassifierRF(RandomForestModel):
+    def metadata(self) -> Dict[str, Any]:
+        meta = super().metadata()
+        meta.update({'name': 'SynFloodClassifierRF', 'role': 'tier_2_synflood_detector'})
+        return meta
+
+
+class DDoSClassifierRF(RandomForestModel):
+    def metadata(self) -> Dict[str, Any]:
+        meta = super().metadata()
+        meta.update({'name': 'DDoSClassifierRF', 'role': 'tier_2_ddos_detector'})
+        return meta
+
+
+class BotnetClassifierRF(RandomForestModel):
+    def metadata(self) -> Dict[str, Any]:
+        meta = super().metadata()
+        meta.update({'name': 'BotnetClassifierRF', 'role': 'tier_2_botnet_detector'})
+        return meta
+
+
+class HierarchicalIDSClassifier(BaseModel):
+    """Composite classifier implementing two-tier hierarchical classification."""
+
+    def __init__(self, models_dir: str | None = None) -> None:
+        self.scaler = None
+        self.binary_model = None
+        self.synflood_model = None
+        self.botnet_model = None
+        self.ddos_model = None
+        self.portscan_model = None
         self.loaded = False
-        self.feature_order = feature_order or [
-            'packet_size', 'protocol', 'src_port', 'dst_port',
-            'is_tcp', 'is_udp', 'is_icmp', 'src_ip_private', 'dst_ip_private'
+
+        self.feature_columns = [
+            'Flow Duration', 'Flow Bytes/s', 'Flow IAT Mean', 'Flow IAT Std',
+            'Fwd IAT Total', 'Bwd IAT Total', 'Active Mean', 'Idle Mean',
+            'Bwd Bulk Rate Avg', 'Fwd Bulk Rate Avg', 'Total TCP Flow Time',
+            'FIN Flag Count', 'SYN Flag Count', 'RST Flag Count',
+            'PSH Flag Count', 'ACK Flag Count', 'Fwd PSH Flags', 'Bwd PSH Flags',
+            'Total Fwd Packet', 'Total Bwd packets',
+            'Flow Packets/s', 'Fwd Packets/s', 'Bwd Packets/s',
+            'Packet Length Mean', 'Packet Length Std',
+            'Fwd URG Flags', 'Bwd URG Flags', 'ICMP Code', 'ICMP Type'
         ]
 
-    def load(self, model_path: str) -> None:
+        if models_dir:
+            self.load(models_dir)
+
+    def load(self, model_dir: str) -> None:
         try:
-            import torch
+            import joblib
         except ImportError as exc:
-            raise ImportError('PyTorch is required to load PyTorch models') from exc
+            raise ImportError('joblib is required to load serialized model files') from exc
 
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f'Model file not found: {model_path}')
+        scaler_path = os.path.join(model_dir, 'network_scaler.pkl')
+        binary_path = os.path.join(model_dir, 'binary_anomaly_rf.pkl')
+        synflood_path = os.path.join(model_dir, 'synflood_rf.pkl')
+        botnet_path = os.path.join(model_dir, 'botnet_rf.pkl')
+        ddos_path = os.path.join(model_dir, 'ddos_rf.pkl')
+        portscan_path = os.path.join(model_dir, 'portscan_rf.pkl')
 
-        self.model = torch.load(model_path)
-        self.model.eval()
+        # Load scaler
+        if not os.path.exists(scaler_path):
+            raise FileNotFoundError(f"Scaler file not found: {scaler_path}")
+        self.scaler = joblib.load(scaler_path)
+
+        # Load Tier 1 binary model
+        if not os.path.exists(binary_path):
+            raise FileNotFoundError(f"Binary anomaly detector not found: {binary_path}")
+        self.binary_model = joblib.load(binary_path)
+
+        # Load Tier 2 specialized models (gracefully fallback to None if missing)
+        if os.path.exists(synflood_path):
+            self.synflood_model = joblib.load(synflood_path)
+        if os.path.exists(botnet_path):
+            self.botnet_model = joblib.load(botnet_path)
+        if os.path.exists(ddos_path):
+            self.ddos_model = joblib.load(ddos_path)
+        if os.path.exists(portscan_path):
+            self.portscan_model = joblib.load(portscan_path)
+
         self.loaded = True
 
     def predict(self, features: FeatureDict) -> InferenceResult:
-        if not self.loaded or self.model is None:
-            raise RuntimeError('PyTorch model is not loaded')
+        if not self.loaded:
+            raise RuntimeError('Hierarchical IDS Classifier must be loaded before predicting.')
 
-        import torch
-        vector = self._vectorize(features)
-        with torch.no_grad():
-            outputs = self.model(vector)
-            probabilities = torch.softmax(outputs, dim=1).cpu().numpy()[0]
-            prediction = int(probabilities.argmax())
-            score = float(probabilities[prediction])
-        label = 'attack' if prediction == 1 else 'normal'
-        return InferenceResult(label=label, score=score, features=features)
-
-    def metadata(self) -> Dict[str, Any]:
-        return {
-            'name': 'PyTorchModel',
-            'framework': 'PyTorch',
-            'type': 'pytorch',
-        }
-
-    def _vectorize(self, features: FeatureDict):
-        import torch
-        values = [float(features.get(key, 0)) for key in self.feature_order]
-        return torch.tensor([values], dtype=torch.float32)
-
-
-class XGBoostModel(BaseModel):
-    def __init__(self, feature_order: list[str] | None = None) -> None:
-        self.model = None
-        self.loaded = False
-        self.feature_order = feature_order or [
-            'packet_size', 'protocol', 'src_port', 'dst_port',
-            'is_tcp', 'is_udp', 'is_icmp', 'src_ip_private', 'dst_ip_private'
-        ]
-
-    def load(self, model_path: str) -> None:
         try:
-            import xgboost as xgb
+            import pandas as pd
         except ImportError as exc:
-            raise ImportError('XGBoost is required to load xgboost models') from exc
+            raise ImportError('pandas is required for feature vector formatting') from exc
 
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f'Model file not found: {model_path}')
+        # 1. Represent features as a 1-row DataFrame matching training layout
+        df = pd.DataFrame([features], columns=self.feature_columns)
 
-        self.model = xgb.Booster()
-        self.model.load_model(model_path)
-        self.loaded = True
+        # 2. Preprocess features using the ColumnTransformer
+        X_scaled = self.scaler.transform(df)
 
-    def predict(self, features: FeatureDict) -> InferenceResult:
-        if not self.loaded or self.model is None:
-            raise RuntimeError('XGBoost model is not loaded')
+        # 3. Tier 1 classification: Anomaly vs Normal
+        binary_pred = self.binary_model.predict(X_scaled)[0]
+        binary_probs = self.binary_model.predict_proba(X_scaled)[0]
+        anomaly_score = float(binary_probs[1]) if len(binary_probs) > 1 else float(binary_probs[0])
 
-        import xgboost as xgb
-        vector = xgb.DMatrix([self._vectorize(features)])
-        prediction = float(self.model.predict(vector)[0])
-        score = max(0.0, min(1.0, prediction))
-        label = 'attack' if score >= 0.5 else 'normal'
-        return InferenceResult(label=label, score=score, features=features)
+        if binary_pred == 0:
+            return InferenceResult(label='normal', score=1.0 - anomaly_score, features=features)
+
+        # 4. Tier 2: Route anomaly to subclass classifiers
+        scores: Dict[str, float] = {}
+
+        if self.synflood_model is not None:
+            syn_probs = self.synflood_model.predict_proba(X_scaled)[0]
+            scores['SYNC FLOOD'] = float(syn_probs[1]) if len(syn_probs) > 1 else float(syn_probs[0])
+
+        if self.botnet_model is not None:
+            bot_probs = self.botnet_model.predict_proba(X_scaled)[0]
+            scores['BOTNET'] = float(bot_probs[1]) if len(bot_probs) > 1 else float(bot_probs[0])
+
+        if self.ddos_model is not None:
+            ddos_probs = self.ddos_model.predict_proba(X_scaled)[0]
+            scores['DDOS'] = float(ddos_probs[1]) if len(ddos_probs) > 1 else float(ddos_probs[0])
+
+        if self.portscan_model is not None:
+            port_probs = self.portscan_model.predict_proba(X_scaled)[0]
+            scores['PORTSCAN'] = float(port_probs[1]) if len(port_probs) > 1 else float(port_probs[0])
+
+        if scores:
+            best_label = max(scores, key=scores.get)
+            best_score = scores[best_label]
+
+            # If the highest probability is below 0.5, default to generic anomaly label
+            if best_score < 0.5:
+                return InferenceResult(label='attack', score=anomaly_score, features=features)
+            else:
+                return InferenceResult(label=best_label.lower(), score=best_score, features=features)
+        else:
+            return InferenceResult(label='attack', score=anomaly_score, features=features)
 
     def metadata(self) -> Dict[str, Any]:
         return {
-            'name': 'XGBoostModel',
-            'framework': 'XGBoost',
-            'type': 'xgboost',
+            'name': 'HierarchicalIDSClassifier',
+            'type': 'hierarchical_rf_composite',
+            'loaded_submodels': {
+                'binary_anomaly': self.binary_model is not None,
+                'synflood': self.synflood_model is not None,
+                'botnet': self.botnet_model is not None,
+                'ddos': self.ddos_model is not None,
+                'portscan': self.portscan_model is not None,
+            }
         }
-
-    def _vectorize(self, features: FeatureDict) -> list[float]:
-        return [float(features.get(key, 0)) for key in self.feature_order]

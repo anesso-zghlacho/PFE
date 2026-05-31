@@ -26,9 +26,23 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'Starting sniffer on {interface or "default interface"}...'))
 
-        # Initialize the service with the mock model for now
-        model = create_model('mock')
-        model.load('') # Mock model doesn't need a path
+        # Load hierarchical composite classifier if available, else fallback to mock
+        import os
+        models_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'processing', 'models')
+        scaler_file = os.path.join(models_dir, 'network_scaler.pkl')
+
+        if os.path.exists(scaler_file):
+            try:
+                model = create_model('hierarchical')
+                model.load(models_dir)
+                logger.info("CLI Sniffer loaded Hierarchical IDS Models.")
+            except Exception as e:
+                logger.error(f"Error loading Hierarchical IDS Models: {e}. Falling back to mock model.")
+                model = create_model('mock')
+                model.load('')
+        else:
+            model = create_model('mock')
+            model.load('')
         service = PacketAnalysisService(model)
 
         def process_packet(packet):
